@@ -7,6 +7,7 @@ import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 
 const { user } = useStore()
+
 const state = reactive({
   tempAvatarURL: ''
 })
@@ -32,7 +33,7 @@ const beforeAvatarUpload: UploadProps['beforeUpload'] = (rawFile) => {
 
 const updateInfo = async (key: string) => {
   const res = await request({
-    url: '/customer/updateinfo',
+    url: `/${user.role}/updateinfo`,
     method: 'post',
     data: {
       id: user.token,
@@ -91,13 +92,13 @@ const confirmAvatar = () => {
       <el-form-item label="昵称：">
         <el-input v-model="user.nickname" @keyup.enter="updateInfo('name')"/>
       </el-form-item>
-      <el-form-item label="性别：">
+      <el-form-item label="性别：" v-if="!user.role.includes('manager')">
         <el-input v-model="user.sex" @keyup.enter="updateInfo('sex')"/>
       </el-form-item>
       <el-form-item label="手机号：">
         <el-input v-model="user.phone" @keyup.enter="updateInfo('phonenumber')"/>
       </el-form-item>
-      <el-form-item label="身份证：">
+      <el-form-item label="身份证：" v-if="user.role!=='courier'">
         <el-input v-model="user.idcard" @keyup.enter="updateInfo('idcard')"/>
       </el-form-item>
     </el-form>

@@ -12,6 +12,18 @@ const props = defineProps<{
 }>()
 
 const { user } = useStore()
+let knownAdminPage = ''
+switch (user.role) {
+  case 'courier':
+    knownAdminPage = 'delivery'
+    break
+  case 'supermanager':
+    knownAdminPage = 'courier'
+    break
+  default:
+    knownAdminPage = 'outlet'
+    break
+}
 const state = reactive({
   style: {
     color: props.color || "#000",
@@ -28,12 +40,12 @@ const state = reactive({
     },
     {
       index: "1",
-      path: "/user/order",
+      path: '/user/price',
       name: "用户服务",
     },
     {
       index: "2",
-      path: "/admin/outlet",
+      path: `/admin/${knownAdminPage}`,
       name: "物流服务",
     },
     {
@@ -55,6 +67,7 @@ const handleCommand = (command: string) => {
   switch (command) {
     case 'logout':
       user.resetToken()
+      router.push('/')
       break
     case 'changePwd':
       router.push({path: '/user/space', hash: '#1'})
@@ -146,6 +159,7 @@ const toUserSpace = () => {
     position: relative;
     text-align: right;
     .avatar {
+      width: 50px;
       height: 50px;
       margin: 0;
       border-radius: 50%;

@@ -14,7 +14,7 @@ const { order } = useStore()
   <div class="order">
     <Nav bg-color="#b2c8f3" hover-color="#f19d63" selected-id="1"></Nav>
     <main>
-      <UserEntry class="entries" :selected-id="0"></UserEntry>
+      <UserEntry class="entries" :selected-id="2"></UserEntry>
       <OrderInfo v-if="order.orderStep===0"></OrderInfo>
       <!-- <OrderType v-model:form2="formState" v-if="global.orderStep===1"></OrderType> -->
       <OrderType v-if="order.orderStep===1"></OrderType>

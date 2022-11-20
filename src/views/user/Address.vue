@@ -7,7 +7,7 @@ import AddressVue from '@/components/Address.vue'
 
 <template>
   <div class="container">
-    <Nav bg-color="#b2c8f3" hover-color="#f19d63" selected-id="1"></Nav>
+    <Nav bg-color="#b2c8f3" hover-color="#f19d63" selected-id="3"></Nav>
     <main>
       <UserEntry class="entries" :selected-id="3"></UserEntry>
 

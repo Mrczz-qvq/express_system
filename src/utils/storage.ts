@@ -7,7 +7,7 @@ export const localStorage = {
     window.localStorage.setItem(key, JSON.stringify(val))
   },
   // 获取永久缓存
-  get(key: string) {
+  get(key: string): string {
     const json: any = window.localStorage.getItem(key)
     return JSON.parse(json)
   },

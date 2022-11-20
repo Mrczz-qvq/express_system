@@ -35,6 +35,18 @@ const router = createRouter({
           path: 'outlet',
           component: () => import('../views/admin/Outlet.vue'),
         },
+        {
+          path: 'express',
+          component: () => import('../views/admin/Express.vue'),
+        },
+        {
+          path: 'courier',
+          component: () => import('../views/admin/Courier.vue'),
+        },
+        {
+          path: 'delivery',
+          component: () => import('../views/admin/Delivery.vue'),
+        }
       ],
       meta: { requiresAuth: true }
     },
@@ -77,8 +89,8 @@ router.beforeEach(async (to, from) => {
   const { user } = useStore()
   // console.log(user.isLoggedIn, user.token, from, to);
   
-  if (to.meta.requiresAuth && !user.isLoggedIn) {
-    // 如果没有登录，则重定向到登录页面
+  // 如果没有登录，或身为用户却想使用管理系统，则重定向到登录页面
+  if ((to.meta.requiresAuth && !user.isLoggedIn) || (to.path.startsWith('/admin') && user.isCustomer)) {
     return {
       name: 'login',
       // 保存我们所在的位置，以便以后再来

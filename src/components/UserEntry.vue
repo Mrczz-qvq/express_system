@@ -1,16 +1,23 @@
 <script setup lang="ts">
 import router from '@/router'
+import useStore from '@/stores'
 
 const props = defineProps<{
   selectedId?: number
 }>()
+const { user } = useStore()
 
 const items = [
-  {route: '/user/order', text: '寄快递'},
-  {route: '/user/outlet', text: '网点查询'},
-  {route: '/user/price', text: '资费查询'},
-  {route: '/user/address', text: '地址服务'},
+  {route: '/user/price', text: '资费查询', id: 0},
+  {route: '/user/outlet', text: '网点查询', id: 1},
 ]
+// if (true) {
+if (!user.isLoggedIn || user.isCustomer) {
+  items.push(
+    {route: '/user/order', text: '寄快递', id: 2},
+    {route: '/user/address', text: '地址服务', id: 3}
+  )
+}
 
 const routeTo = (url: string) => {
   router.push(url)
@@ -21,8 +28,8 @@ const routeTo = (url: string) => {
   <section class="entries">
     <el-button
       color="#6096e6"
-      v-for="(item, i) in items"
-      :class="{ active: props.selectedId===i }"
+      v-for="item in items"
+      :class="{ active: props.selectedId===item.id }"
       @click="routeTo(item.route)"
       >
         <!-- <router-link :to="item.route"></router-link> -->
@@ -44,7 +51,7 @@ const routeTo = (url: string) => {
 
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: space-around;
 }
 
 .el-button.active {

@@ -5,27 +5,43 @@ import { localStorage } from '@/utils/storage'
 import userReq from '@/api/system/user'
 import { login, logout } from '@/api/login'
 
+const tokenName = 'expresSys_token@role'
+
 const useUserStore = defineStore({
   id: 'user',
-  state: (): UserState => ({
-    token: localStorage.get('token') || '',
-    nickname: '',
-    avatar: '/imgs/default_avatar.jpg',
-    // roles: [],
-    // perms: [],
-    idcard: '',
-    sex: '',
-    phone: '',
-    password: '',
-  }),
+  state: (): UserState => {
+    const [token, role] = (localStorage.get(tokenName) || '@').split('@')
+    return {
+      token,
+      nickname: '',
+      avatar: '/imgs/default_avatar.jpg',
+      role,
+      // perms: [],
+      idcard: '',
+      sex: '',
+      phone: '',
+      password: '',
+    }
+  },
 
   getters: {
     isLoggedIn(): boolean {
       return this.token !== ''
     },
+    isCustomer(): boolean {
+      return this.role === 'customer'
+    },
+    isSupAdmin(): boolean {
+      return this.role === 'supermanager'
+    },
   },
 
   actions: {
+    hasAuth(tgtRole: string|null): boolean {
+      // null 是 supermanager  的缩略，毕竟绝不会跟role等价
+      return this.isSupAdmin || this.role === tgtRole
+    },
+
     getByServerKey(key: string): string|undefined {
       switch (key) {
         case 'id':
@@ -50,7 +66,7 @@ const useUserStore = defineStore({
       if(!this.isLoggedIn || this.nickname) {
         return
       }
-      const res = await userReq.get(parseInt(this.token))
+      const res = await userReq.get(this.token, this.role)
       this.nickname = res.data.name
       this.idcard = res.data.idcard
       this.sex = res.data.sex
@@ -62,23 +78,18 @@ const useUserStore = defineStore({
      * 登录
      */
      async login(loginData: LoginFormData) {
-      const { username, password, code, uuid } = loginData
-      const res = await login({
-        username: username.trim(),
-        password: password,
-        grant_type: 'captcha',
-        code: code,
-        uuid: uuid,
-      })
+      loginData.username = loginData.username.trim()
+      const res = await login(loginData)
       // const { access_token, token_type } = response.data
       // const accessToken = token_type + ' ' + access_token
       const loginId = res.data
-      if (loginId === -1) {
+      if (loginId === 0) {
         throw new Error('登录失败！')
       }
       // 实际上并不是token，但权当token用吧
+      this.role = loginData.role
       this.token = String(loginId)
-      localStorage.set('token', this.token)
+      localStorage.set('expresSys_token@role', `${loginId}@${this.role}`)
     },
 
     /**
@@ -86,15 +97,14 @@ const useUserStore = defineStore({
      */
     async logout() {
       await logout()
-      localStorage.remove('token')
-      this.$reset()
+      this.resetToken()
     },
 
     /**
      * 清除 Token
      */
     resetToken() {
-      localStorage.remove('token')
+      localStorage.remove(tokenName)
       this.$reset()
     },
   },

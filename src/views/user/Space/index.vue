@@ -10,11 +10,15 @@ import { reactive } from 'vue'
 import { useRoute } from 'vue-router'
 
 const { user } = useStore()
+
 const route = useRoute()
 const state = reactive({
-  menu: ['修改信息', '修改密码', '地址管理', '订单管理', ],
+  menu: ['修改信息', '修改密码', ],
   menuSelected: parseInt(route.hash[1]) || 0,
 })
+if (user.isCustomer) {
+  state.menu.push('地址管理', '订单管理')
+}
 </script>
 
 <template>

@@ -8,7 +8,7 @@ const { order } = useStore()
   <div class="main">
     <main class="qrCode">
       <h3>扫码支付</h3>
-      <el-image style="width: 240px; height: 240px" src="/QRCode_pay.jpg" fit="cover" />
+      <el-image style="width: 240px; height: 240px" src="/imgs/QRCode_pay.jpg" fit="cover" />
     </main>
 
     <footer class="operation">

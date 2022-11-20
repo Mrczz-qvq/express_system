@@ -15,7 +15,7 @@ const expressTypes = [
   <div class="order">
     <Nav bg-color="#b2c8f3" hover-color="#f19d63" selected-id="1"></Nav>
     <main>
-      <UserEntry class="entries" :selected-id="2"></UserEntry>
+      <UserEntry class="entries" :selected-id="0"></UserEntry>
 
       <section class="price-info">
         <aside class="type-tabs" v-for="express in expressTypes">

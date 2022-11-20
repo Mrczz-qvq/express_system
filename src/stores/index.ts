@@ -2,6 +2,7 @@ import useUserStore from './user'
 import useGlobalStore from './global'
 import useOrderStore from './order'
 import { createPinia, setMapStoreSuffix } from 'pinia'
+import { watch } from 'vue'
 
 declare module 'pinia' {
   export interface MapStoresCustomization {
@@ -13,9 +14,14 @@ setMapStoreSuffix('') // completely remove the suffix
 
 const globalPinia = createPinia()
 const user = useUserStore(globalPinia)
+// 当token变化就刷新用户信息
+watch(
+  () => user.token,
+  () => user.reqUserInfo(),
+  {immediate: true},
+)
 const order = useOrderStore(globalPinia)
 const global = useGlobalStore(globalPinia)
-user.reqUserInfo()
 
 // const useStore = (addPinia?: boolean) => {
 //   const pinia = addPinia? globalPinia: undefined

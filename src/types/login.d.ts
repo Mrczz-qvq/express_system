@@ -4,7 +4,7 @@
 export interface LoginFormData {
   username: string
   password: string
-  grant_type: string
+  role: string
   code: string
   uuid: string
 }
@@ -32,7 +32,7 @@ export interface UserState {
   token: string  // 实际上就是id
   nickname: string
   avatar: string
-  // roles: string[]
+  role: string
   // perms: string[]
   idcard: string
   sex: string

@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, toRefs, watch, nextTick } from 'vue'
+import type { LoginFormData } from '@/types/login'
 
-// 组件依赖
+import { onMounted, reactive, ref, toRefs, watch, nextTick } from 'vue'
 import { ElForm, ElInput, ElMessage } from 'element-plus'
 import router from '@/router'
-
-// API依赖
 import { useRoute } from 'vue-router'
-import { getCaptcha } from '@/api/login'
-import type { LoginFormData, Captcha } from '@/types/login'
-// 状态管理依赖
+// import { getCaptcha } from '@/api/login'
 import useStore from '@/stores'
+import { drawCaptcha } from '@/utils/validate'
 
 const { user } = useStore()
 const route = useRoute()
@@ -19,7 +16,7 @@ const loginFormRef = ref(ElForm)
 const passwordRef = ref(ElInput)
 const loginInfo = {
   title: 'ExpresSys',
-  username: '用户名',
+  username: '账号',
   password: '密码',
   login: '登 录',
   code: '请输入验证码',
@@ -27,12 +24,29 @@ const loginInfo = {
   icp: 'ICP备案号:福ICP备60002333号-6',
 }
 
+const validatePassword = (rule: any, value: any, callback: any) => {
+  if (value.length < 6) {
+    callback(new Error('密码不可小于6位'))
+  } else {
+    callback()
+  }
+}
+const validateValidCode = (rule: any, value: any, callback: any) => {
+  if (value.length !== 4 || value !== state.correctCode) {
+    callback(new Error('验证码错误'))
+  } else {
+    callback()
+  }
+}
+// arrow 与 function 区别于必须先定义才能调用
+
 const state = reactive({
   redirect: '',
-  iconColor: '#eee',
+  iconColor: '#333',
   loginForm: {
-    username: '',
-    password: '',
+    username: '',  // 13110510812
+    password: '',  // 123456
+    role: 'customer',
     code: '',
     uuid: '',
   } as LoginFormData,
@@ -44,7 +58,9 @@ const state = reactive({
       validator: validatePassword,
       // 'inline-message': false,
     },],
+    code: [{ required: true, trigger: 'blur', validator: validateValidCode }],
   },
+  correctCode: '正确的验证码',  // 初值为不会出现的
   loading: false,
   passwordType: 'password',
   captchaBase64: '',
@@ -54,14 +70,6 @@ const state = reactive({
   clientHeight: document.documentElement.clientHeight,
   showCopyright: true,
 })
-
-function validatePassword(rule: any, value: any, callback: any) {
-  if (value.length < 6) {
-    callback(new Error('The password can not be less than 6 digits'))
-  } else {
-    callback()
-  }
-}
 
 const {
   loginForm,
@@ -73,13 +81,13 @@ const {
   showCopyright,
 } = toRefs(state)
 
-function checkCapslock(e: any) {
+const checkCapslock = (e: any) => {
   const { key } = e
   state.capslockTooltipDisabled =
     key && key.length === 1 && key >= 'A' && key <= 'Z'
 }
 
-function showPwd() {
+const showPwd = () => {
   if (state.passwordType === 'password') {
     state.passwordType = ''
   } else {
@@ -92,7 +100,7 @@ function showPwd() {
 
 // async 函数将非promise包装成 Promise 对象，需要逐层await
 // await 接promise对象就会等其执行完
-async function handleLogin() {
+const handleLogin = async () => {
   const inner = async (valid: boolean) => {
     if(!valid) {
       return false
@@ -101,7 +109,7 @@ async function handleLogin() {
       await user.login(state.loginForm)
       router.push({ path: state.redirect || '/', query: state.otherQuery })
     } catch (err: any) {
-      handleCaptchaGenerate()
+      refreshCaptcha()
       ElMessage.error(err.message)
       return false
     }
@@ -113,14 +121,30 @@ async function handleLogin() {
 }
 
 // 获取验证码
-function handleCaptchaGenerate() {
-  state.captchaBase64 = "/imgs/valid_code.jpg"
-  state.loginForm.uuid = "null"
+const refreshCaptcha = () => {
+  // state.captchaBase64 = "/imgs/valid_code.jpg"
+  // state.loginForm.uuid = "null"
+
   // getCaptcha().then(({ data }: { data: Captcha}) => {
   //   const { img, uuid } = data
   //   state.captchaBase64 = img
   //   state.loginForm.uuid = uuid
   // })
+
+  const canvas = document.querySelector('#captcha-canvas') as HTMLCanvasElement
+  state.correctCode = drawCaptcha(canvas)
+}
+const autoFillCaptcha = () => {
+  state.loginForm.code = state.correctCode
+}
+
+const getOtherQuery = (query: any) => {
+  return Object.keys(query).reduce((acc: any, cur: any) => {
+    if (cur !== 'redirect') {
+      acc[cur] = query[cur]
+    }
+    return acc
+  }, {})
 }
 
 watch(
@@ -137,17 +161,9 @@ watch(
   }
 )
 
-function getOtherQuery(query: any) {
-  return Object.keys(query).reduce((acc: any, cur: any) => {
-    if (cur !== 'redirect') {
-      acc[cur] = query[cur]
-    }
-    return acc
-  }, {})
-}
 
 onMounted(() => {
-  handleCaptchaGenerate()
+  refreshCaptcha()
   window.onresize = () => {
     if (state.clientHeight > document.documentElement.clientHeight) {
       state.showCopyright = false
@@ -197,7 +213,7 @@ onMounted(() => {
             :key="passwordType"
             v-model="loginForm.password"
             :type="passwordType"
-            placeholder="Password"
+            :placeholder="loginInfo.password"
             name="password"
             tabindex="2"
             auto-complete="on"
@@ -219,21 +235,35 @@ onMounted(() => {
           @keyup.enter="handleLogin"
         />
 
-        <div class="captcha">
-          <img
+        <!-- <div class="captcha"> -->
+          <!-- <img
             alt="validdate code"
             :src="captchaBase64"
-            @click="handleCaptchaGenerate"
+            @click="refreshCaptcha"
             height="38px"
-          />
-        </div>
+          /> -->
+        <!-- </div> -->
+          <canvas 
+            id="captcha-canvas" 
+            width="90" height="35" 
+            @click="refreshCaptcha"
+            @auxclick="autoFillCaptcha"
+          >
+          </canvas>
       </el-form-item>
+
+      
+      <el-radio-group v-model="state.loginForm.role">
+        <el-radio label="customer">普通用户</el-radio>
+        <el-radio label="courier">快递员</el-radio>
+        <el-radio label="manager">网点管理员</el-radio>
+        <el-radio label="supermanager">后台管理员</el-radio>
+      </el-radio-group>
 
       <el-button
         size="default"
         :loading="loading"
         type="primary"
-        style="width: 100% margin-bottom: 30px"
         @click.prevent="handleLogin"
         >{{ loginInfo.login }}
       </el-button>
@@ -254,7 +284,7 @@ onMounted(() => {
 </template>
 
 <style lang="less" scoped>
-@bg: #2d3a4b;
+@bg: #add7f2;
 @dark_gray: #889aa4;
 @light_gray: #eee;
 @cursor: #fff;
@@ -271,6 +301,7 @@ onMounted(() => {
   display: flex;
   flex-direction: row;
   align-items: center;
+  flex-wrap: nowrap;
   // justify-content: space-around;
 }
 
@@ -287,12 +318,11 @@ onMounted(() => {
         -webkit-text-fill-color: @cursor !important;
       }
 
+      caret-color: #000;
       background: transparent;
       border: 0px;
       border-radius: 0px;
-      color: @light_gray;
       height: 36px;
-      caret-color: @cursor;
       box-shadow: none;
     }
     
@@ -307,10 +337,9 @@ onMounted(() => {
 }
 
 :deep(.el-form-item) {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(12, 78, 200,0.4);
+  background: #fff;
   border-radius: 5px;
-  color: #454545;
 }
 
 .login-container {
@@ -344,6 +373,11 @@ onMounted(() => {
 
   }
 
+  .el-radio-group {
+    width: 100%;
+    justify-content: space-around;
+  }
+
   .tips {
     display: none;
     font-size: 14px;
@@ -362,20 +396,23 @@ onMounted(() => {
 
     .title {
       font-size: 26px;
-      color: @light_gray;
+      color: #fff;
       margin: 0px auto 40px auto;
       text-align: center;
       font-weight: bold;
     }
   }
 
-  .captcha {
-    right: 30px;
-    img {
-      height: 36px;
-      cursor: pointer;
-      vertical-align: middle; 
-    }
+  // .captcha {
+  //   right: 30px;
+  //   img {
+  //     height: 36px;
+  //     cursor: pointer;
+  //     vertical-align: middle; 
+  //   }
+  // }
+  #captcha-canvas {
+    cursor: pointer;
   }
   .copyright {
     width: 100%;
@@ -383,7 +420,7 @@ onMounted(() => {
     bottom: 0;
     font-size: 12px;
     text-align: center;
-    color: #cccccc;
+    color: #fff;
   }
 }
 </style>

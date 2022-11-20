@@ -1,47 +1,155 @@
 <script setup lang="ts">
 import request from "@/utils/request";
-import { ElMessage } from 'element-plus'
 import { reactive } from 'vue'
+import useStore  from '@/stores'
+import router from "@/router";
+import NavVue from "@/components/Nav.vue";
+import FooterVue from "@/components/Footer.vue";
+
+const {user} = useStore()
+async function load(){
+const ds = await request({
+    url: '/branch/getbranchinfo_all',
+    method: 'get',
+  })
+  .then(function(res){
+      state.tableData = res.data
+  });
+
+}
+load();
+async function addbranch(){
+const ds = await request({
+    url: '/branch/insert',
+    method: 'post',
+    data: { 
+      address: state.tran_form.address,   
+    },
+  })
+  .then(function(res){
+      state.tran_form.branchid = res.data;
+      addname();
+  });
+
+}
+async function addname(){
+  const ds = await request({
+    url: '/manager/insert',
+    method: 'post',
+    data: { 
+      name: state.tran_form.name,
+      phonenumber: state.tran_form.phonenumber,
+      type:0,
+      password :'aaa',
+      idcard:'213123aa',
+    },
+  })
+  .then(function(res){
+      state.tran_form.id = res.data.id;;
+      update()
+  });
+}
+async function update(){
+  const ds = await request({
+    url: '/manager/updatebranch',
+    method: 'post',
+    data: { 
+      branchid: state.tran_form.branchid,
+      id: state.tran_form.id
+    },
+  })
+  .then(function(res){
+      load()
+  });
+}
+async function deletebranch(val: number){
+  const ds = await request({
+    url: '/branch/delete',
+    method: 'post',
+    data: { 
+      id: val,
+    },
+  })
+  .then(function(res){
+     load()
+  });
+}
+async function search(){
+  const ds = await request({
+    url: '/branch/searchbyaddress',
+    method: 'post',
+    data: { 
+      address: state.search_name,
+    },
+  })
+  .then(function(res){
+      state.tableData = []
+      state.tableData.push(res.data)
+  });
+}
+async function updatemanager(){
+  const ds = await request({
+    url: '/manager/updateinfo',
+    method: 'post',
+    data: { 
+      id: state.tran_form.id,
+      name: state.tran_form.name,
+      phonenumber: state.tran_form.phonenumber
+    },
+  })
+  .then(function(res){
+        load()
+  });
+}
+async function updateaddress(){
+  const ds = await request({
+    url: '/branch/updateaddress',
+    method: 'post',
+    data: { 
+      id: state.tran_form.branchid,
+      address: state.tran_form.address,
+    },
+  })
+  .then(function(res){
+       searchidbybranchid()
+      console.log(res.data)
+  });
+}
+async function searchidbybranchid(){
+  const ds = await request({
+    url: '/branch/getmanager',
+    method: 'post',
+    data: { 
+      id: state.tran_form.branchid,
+    },
+  })
+  .then(function(res){
+      state.tran_form.id = res.data.id;
+      console.log(res.data)
+      updatemanager()
+  });
+}
 
 interface tranForm {
-  tran_id: number
-  tran_state: number
-  tran_name: string
-  tran_money: number
+  branchid: number
+  address: string
+  name: string
+  phonenumber: string
+  id: number
 }
 
 const state = reactive({
   //表格数据
-  tableData: [
-    {
-      tran_id: 1,
-      tran_name: 'Tom',
-      tran_state: 1,
-      tran_money: 'No. 189, Grove St, Los Angeles',
-    },
-    {
-      tran_id: 2,
-      tran_name: '尼玛',
-      tran_state: 0,
-      tran_money: 114,
-    },
-    {
-      tran_id: 3,
-      tran_name: 'jack',
-      tran_state: 1,
-      tran_money: 514,
-    },
-  ] as Array<tranForm>,
+  tableData: [] as Array<tranForm>,
   //弹窗
-  dialogVisible: false,
+  dialogVisible1: false,
+  dialogVisible2: false,
   //快捷查询的名称
-  search_tran_name: '',
+  search_name: '',
   //当前页数
   currentPage: 1,
   //每页大小
   pageSize: 5,
-  //总条数
-  total: 0,
   //隐藏项目
   isShow: false,
   //表单对齐方式
@@ -51,173 +159,267 @@ const state = reactive({
 })
 
 //读取列表数据
-const loadData = async () => {
-  const res = await request.get('/api/TranController/findTranList', {
-    params: {
-      tran_name: state.search_tran_name,
-      currentPage: state.currentPage,
-      pageSize: state.pageSize
+const searchaddress = async () => {
+  let newtable = []
+  for (let i = 0; i < state.tableData.length; i++) {
+    if (state.tableData[i].address.indexOf(state.search_name) !== -1) {
+      newtable.push(state.tableData[i])
     }
-  })
-
-  state.tableData = res.data.list
-  state.total = res.data.total
+  }
+  state.tableData = newtable
 }
 
-//改变每页条数
-const handleSizeChange = (val: number) => {
-  state.pageSize = val
-  loadData()
+//跳转快递
+const gotoexpress = (val: number) => {
+  router.push({ path: '/admin/express', query: { id: val } })
 }
 
-//改变当前页
-const handleCurrentChange = (val: number) => {
-  state.currentPage = val
-  loadData()
+//跳转网点管理
+const gotooutlet = () => {
+  router.push({path:'/admin/outlet'})
+}
+//跳转快递管理
+const gotodelivery = () => {
+  router.push({path:'/admin/delivery'})
+}
+
+//跳转快递员管理
+const gotocourier = () => {
+  router.push({path:'/admin/courier'})
 }
 
 // 增加打卡窗口
 const open = () => {
   state.tran_form = {
-    tran_id: state.tableData.length,
-    tran_name: '',
-    tran_state: 1,
-    tran_money: 0,
+      branchid: state.tableData.length,
+      name: 'gs',
+      address: 'dadnamea',
+      phonenumber: '1213210',
+      id:0,
   }
-  state.dialogVisible = true
+  state.dialogVisible1 = true
 }
 
-//增加运输工具
+// 增加运输工具
 const saveCar = async () => {
-  const res: any = await request.post('/api/TranController/saveTran', state.tran_form)
-  if (res.code === 0) {
-    ElMessage.success({
-      message: res.message,
-      type: 'success'
-    })
-  } else {
-    ElMessage.error({
-      message: res.message,
-      type: 'error'
-    })
-  }
+  addbranch()
   //关闭对话框
-  state.dialogVisible = false
-  //load数据
-  loadData()
+  state.dialogVisible1 = false
+}
+const resettable = async () => {
+  load()
 }
 
+// 增加运输工具
+const deletecar = async (val: number) => {
+  deletebranch(val)
+  
+}
 /*提前查询*/
-const findCarById = async (tran_id: number) => {
-  state.dialogVisible = true
-  const res: any = request.get('/api/TranController/findTranById', {
-    params: {
-      tran_id: tran_id
-    }
-  })
-
-  if (res.code === 0) {
-    state.dialogVisible = true
-    state.tran_form = res.data
-    return
-  }
-
-  ElMessage.error({
-    message: res.message,
-    type: 'error'
-  })
+const findCarBybranchid = async (val: number) => {
+  state.tran_form.branchid = val;
+  state.dialogVisible2 = true  
 }
 
-/*修改*/
-const updateCar = async () => {
-  const res: any = request.put('/api/TranController/updateTran', state.tran_form)
-
-  if (res.code === 0) {
-    ElMessage.success({
-      message: res.message,
-      type: 'success'
-    })
-  } else {
-    ElMessage.error({
-      message: res.message,
-      type: 'error'
-    })
-  }
-  state.dialogVisible = false
-  loadData()
+//改变每页条数
+const handleSizeChange = (val: number) => {
+  state.pageSize = val
+  load()
 }
+
+//改变当前页
+const handleCurrentChange = (val: number) => {
+  state.currentPage = val
+  load()
+}
+//更新所有
+const updateall = () => {
+  updateaddress()
+  //关闭对话框
+  state.dialogVisible2 = false
+}
+
 </script>
 
 
 <template>
-  <div style="padding: 10px">
+  <NavVue selected-id="2" bg-color="#b2c8f3" hover-color="#f19d63"></NavVue>
+  <div class="main">
     <!-- 头信息 - 新增、搜索、批量操作 -->
-    <div>
-      <div style="float: left;margin: 10px">
-        <el-button type="success" round @click="open">新增运输工具</el-button>
+    <div style="width:100%; height: 10%; padding-top: 10px; text-align: center;">
+      <el-button  @click="gotooutlet()" class="outlet" v-if="user.hasAuth('manager')">
+        网点管理
+      </el-button>
+      <el-button  @click="gotodelivery()"  class="delivery" v-if="user.hasAuth('courier')">
+        快递管理
+      </el-button>
+      <el-button  @click="gotocourier()" class="courier" v-if="user.hasAuth(null)">
+        快递员管理
+      </el-button>
+    </div>
+    <div style="margin: 20px 10px 0px 10px; height: 40px;">
+      <div style="float: left; margin-left: 3%;">
+        <el-button class="addbt" @click="open">新增网点</el-button>
       </div>
 
-      <div style="margin-top: 10px; float: right;margin-right: 50px">
-        <el-input placeholder="请输入名称" v-model="state.search_tran_name" clearable style="width: 200px"></el-input>
-        <el-button type="primary" round style="margin-left: 5px" @click="loadData">查询</el-button>
+      <div style="float: right;margin-right: 3%;">
+        <el-input placeholder="请输入名称" v-model="state.search_name" clearable style="width: 500px; margin-right: 15px;"></el-input>
+        <el-button class="qubt" @click="searchaddress">查询</el-button>
+        <el-button class="qubt" @click="resettable">重置</el-button>
       </div>
 
     </div>
-    <!-- 表格 -->
-    <div style="margin-top: 10px">
-      <el-table ref="multipleTable" :data="state.tableData" :cell-style="{ textAlign: 'center' }"
-        :header-cell-style="{ textAlign: 'center' }" tooltip-effect="dark" style="width: 100%">
-        <el-table-column prop="tran_id" label="id" v-if="state.isShow"></el-table-column>
-        <el-table-column prop="tran_name" label="运输工具名称"></el-table-column>
-        <el-table-column prop="tran_state" label="运输工具状态">
-          <template #default="scope">
-            <el-tag type="success" v-if="scope.row.tran_state === 1">空闲</el-tag>
-            <el-tag type="danger" v-if="scope.row.tran_state === 0">执行任务中</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="tran_money" label="运输起步费用"></el-table-column>
-        <el-table-column label="操作">
-          <template #default="scope">
-            <el-button size="small" type="primary" icon="el-icon-edit" @click="findCarById(scope.row.tran_id)">
-              编辑
-            </el-button>
-
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
-    <!-- 分页 -->
-    <div style="margin-top: 10px">
-      <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="state.currentPage"
-        :page-sizes="[5, 10, 15]" :page-size="state.pageSize" layout="total, sizes, prev, pager, next, jumper" :total="state.total">
-      </el-pagination>
-    </div>
-    <!-- 弹窗 -->
+    <!-- 弹窗1 -->
     <div>
-      <el-dialog title="编辑运输工具" v-model="state.dialogVisible" width="35%">
-        <div style="width: 350px;margin-left: 40px">
-          <el-form :label-position="state.labelPosition" label-width="100px" :model="state.tran_form">
-            <el-form-item label="运输工具名称:">
-              <el-input v-model="state.tran_form.tran_name"></el-input>
+      <el-dialog style="background-color:#9dd0f0; border-radius: 10px;" title="增加网点" v-model="state.dialogVisible1" wbranchidth="35%" >
+        <div style="wbranchidth: 350px;margin-left: 40px">
+          <el-form :label-position="state.labelPosition" label-wbranchidth="100px" :model="state.tran_form">
+            <el-form-item label="管理员名称:" class="whiteitem">
+              <el-input v-model="state.tran_form.name" ></el-input>
             </el-form-item>
-            <el-form-item label="运输起步费用:">
-              <el-input v-model="state.tran_form.tran_money"></el-input>
+            <el-form-item label="电话:" class="whiteitem" >
+              <el-input v-model="state.tran_form.phonenumber" ></el-input>
+            </el-form-item>
+            <el-form-item label="地址:" class="whiteitem">
+              <el-input v-model="state.tran_form.address"></el-input>
             </el-form-item>
           </el-form>
         </div>
         <template #footer>
           <span class="dialog-footer">
-            <el-button @click="state.dialogVisible = false">取 消</el-button>
+            <el-button @click="state.dialogVisible1 = false">取 消</el-button>
 
-            <el-button type="primary" @click="saveCar" v-if="state.tran_form.tran_id === null">增加运输工具</el-button>
-            <el-button type="primary" @click="updateCar" v-if="state.tran_form.tran_id !== null">>修改运输工具</el-button>
+            <el-button type="primary" @click="saveCar" >完成</el-button>
           </span>
         </template>
       </el-dialog>
     </div>
+    <!-- 弹窗2 -->
+    <div>
+      <el-dialog style="background-color:#9dd0f0; border-radius: 10px;" title="修改网点" v-model="state.dialogVisible2" wbranchidth="35%" >
+        <div style="wbranchidth: 350px;margin-left: 40px">
+          <el-form :label-position="state.labelPosition" label-wbranchidth="100px" :model="state.tran_form">
+            <el-form-item label="管理员名称:" class="whiteitem">
+              <el-input v-model="state.tran_form.name" ></el-input>
+            </el-form-item>
+            <el-form-item label="电话:" class="whiteitem" >
+              <el-input v-model="state.tran_form.phonenumber" ></el-input>
+            </el-form-item>
+            <el-form-item label="地址:" class="whiteitem">
+              <el-input v-model="state.tran_form.address"></el-input>
+            </el-form-item>
+          </el-form>
+        </div>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="state.dialogVisible2 = false">取 消</el-button>
+
+            <el-button type="primary" @click="updateall" >完成</el-button>
+          </span>
+        </template>
+      </el-dialog>
+    </div>
+    <!-- 表格 -->
+    <div style="margin-top: 10px ; margin-left: 2%; margin-right: 2%;">
+      <el-table :data="state.tableData.slice((state.currentPage-1)*state.pageSize,state.currentPage*state.pageSize)" :border="true"
+      :cell-style="{ textAlign: 'center' }" :header-cell-style="{ textAlign: 'center', background: '#6096e6', color:'#fff'}" 
+      :row-style="{ color:'#000' }" style="width: 100% ; font-size:16px ">
+        <el-table-column prop="branchid" label="网点id" width="100px"></el-table-column>
+        <el-table-column prop="name" label="管理员" width="150px"></el-table-column>
+        <el-table-column prop="address" label="地址"></el-table-column>
+        <el-table-column prop="phonenumber" label="电话" width="250px"></el-table-column>
+        <el-table-column label="操作" width="300px">
+          <template #default="scope">
+            <el-button size="default"  @click="gotoexpress(scope.row.branchid)">
+              查看快递
+            </el-button>
+            <el-button size="default"  @click="findCarBybranchid(scope.row.branchid)">
+              编辑
+            </el-button>
+            <el-button size="default"  @click="deletecar(scope.row.branchid)">
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    <!-- 分页 -->
+    <div style="margin-top: 10px;">
+      <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page="state.currentPage" background
+        :page-sizes="[5, 10, 20]" :page-size="state.pageSize" layout="total, sizes, prev, pager, next, jumper" :total="state.tableData.length">
+      </el-pagination>
+    </div>
+    <div style="margin-top: 230px; color:#9dd0f0">-</div>
+    <!-- <FooterVue></FooterVue> -->
   </div>
 </template>
 
 <style scoped>
+.whiteitem .el-form-item__label{
+  color: white;
+}
+
+.el-dialog__title {
+  color: white;
+}
+.main{
+  background-color:#9dd0f0; 
+  height: auto; 
+  padding-top:1px ;
+}
+.addbt{
+  width:80px;
+  height:40px;
+  font-size: 16px;
+  border-radius: 8px;
+}
+.qubt{
+  width:60px;
+  height: 30px;
+  font-size: 15px;
+  border-radius: 6px;
+}
+
+.el-button{
+  border: 1px solid #446da9;
+  background-color:#6096e6;
+  color: #fff;
+}
+
+.el-pagination {
+  justify-content: center;  
+}
+
+.outlet{
+  width:150px; 
+  height: 60px; 
+  font-size:20px; 
+  color:#fff; 
+  background-color: rgb(255,186,85);
+  border: 2px solid #fff;
+  border-radius: 10px;
+  margin-right: 50px;
+}
+
+.courier{
+  width:150px; 
+  height: 60px; 
+  font-size:20px; 
+  color:#000;
+  border-radius: 10px;
+  background-color: rgb(152,206,240);
+  border: 2px solid rgb(88,182,229);
+}
+
+.delivery{
+  width:150px; 
+  height: 60px; 
+  font-size:20px; 
+  color:#000;
+  border-radius: 10px;
+  background-color: rgb(152,206,240);
+  border: 2px solid rgb(88,182,229);
+  margin-right: 50px;
+}
 
 </style>

@@ -10,17 +10,27 @@ import type { AxiosPromise } from 'axios'
  * @param data
  */
 export function login(data: LoginFormData): AxiosPromise<number> {
-  return request({
-    url: '/customer/login',
+  const { username, password, role } = data
+  const options = {
+    url: `/${role}/login`,
     method: 'post',
     data: {
-      phonenumber: data['username'],
-      password: data['password'],
-    },
+      phonenumber: username,
+      password: password,
+    } as Object,
     // headers: {
     //   Authorization: 'Basic bWFsbC1hZG1pbi13ZWI6MTIzNDU2',
     // },
-  })
+  }
+  if (role.includes('manager')) {
+    options.url = `/manager/${role}login`
+    options.data = {
+      account: username,
+      password: password,
+      type: role==='supermanager'? 1: 0,
+    }
+  }
+  return request(options)
 }
 
 /**

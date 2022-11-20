@@ -1,0 +1,38 @@
+/* @import "./base.css"; */
+
+::selection {
+  background-color: #66ccff;
+}
+
+html {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB,
+    Microsoft YaHei, Arial, sans-serif;
+}
+
+#app {
+  height: 100%;
+}
+
+:root {
+  /* 这里可以设置你自定义的颜色变量 */
+  /* 这个是element主要按钮:active的颜色，当主题更改后此变量的值也随之更改 */
+  --el-color-primary-dark: #0d84ff;
+  /* element plus 2.1.0 禁用文本色值和正常文本色值无法区分问题 */
+  --el-text-color-disabled: #ccc;
+}
+
+/* 覆盖 element-plus 的样式 */
+.el-input .el-input__wrapper input.el-input__inner:focus-visible {
+  outline: none;
+}

@@ -38,7 +38,14 @@ export default defineConfig({
         //  console.log('path :>> ', path, path.replace(/^\/api/, ''))
         return path.replace(/^\/api/, '')
        }
-      }
+      },
+      '/outer-apis/tmap': {
+       target: "https://apis.map.qq.com/ws/",
+       changeOrigin: true,
+       rewrite: path => {
+        return path.replace(/^\/outer-apis\/tmap/, '')
+       }
+      },
     }
   }
 })
